@@ -47,7 +47,7 @@ public class RecordActivity extends AppCompatActivity {
                 String filename = cursor.getString(cursor.getColumnIndex("filename"));
                 String filepath = cursor.getString(cursor.getColumnIndex("filepath"));
                 String size = cursor.getString(cursor.getColumnIndex("size"));
-                entries.add(id+": "+ createtime + ",  " + duration+ ",  " + filename+ ",  " + filepath+ ",  " + size);
+                entries.add(id+":\n创建时间：" + createtime + ",\n文件长度：" + duration+ ",\n文件名：" + filename+ ",\n存储位置：" + filepath+ ",\n文件大小：" + size + "B");
             } while (cursor.moveToNext());
             cursor.close();
         }
