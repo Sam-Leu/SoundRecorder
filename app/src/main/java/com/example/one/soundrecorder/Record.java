@@ -23,11 +23,12 @@ public class Record {
         this.size = size;
     }
 
-    public Record(String fileName,  String createTime, String duration){
+    public Record(String fileName,  String createTime, String duration, String size){
 
         this.fileName = fileName;
         this.createTime = createTime;
         this.duration = duration;
+        this.size = size;
     }
 
     public String getFileName() {

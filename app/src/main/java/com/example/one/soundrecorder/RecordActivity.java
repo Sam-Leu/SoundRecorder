@@ -16,7 +16,6 @@ import java.util.Vector;
 
 public class RecordActivity extends AppCompatActivity {
 
-//    private ListView data_list;
     private Vector<String> entries;
 
     private DatabaseHelper dbHelper;
@@ -41,10 +40,6 @@ public class RecordActivity extends AppCompatActivity {
 
         mData = new LinkedList<Record>();
 
-//        mData.add(new Record("name", "2018-11-11", "00:12"));
-//
-//        mAdapter = new RecordAdapter((LinkedList<Record>) mData, mContext);
-//        data_list.setAdapter(mAdapter);
 
         //create_list();
         showRecord();
@@ -66,8 +61,18 @@ public class RecordActivity extends AppCompatActivity {
                 String filePath = cursor.getString(cursor.getColumnIndex("filepath"));
                 String createTime = cursor.getString(cursor.getColumnIndex("createtime"));
                 String duration = cursor.getString(cursor.getColumnIndex("duration"));
-                String size = cursor.getString(cursor.getColumnIndex("size"));
-                mData.add(new Record(fileName, createTime, duration));
+                float size = cursor.getFloat(cursor.getColumnIndex("size"));
+                float kbSize = size/1000;
+                float mbSize = size/1024000;
+                String strSize = "0.00KB";
+                if(size < 819200){
+                    strSize = String.valueOf((float)(Math.round(kbSize*100))/(100)) + "KB";
+                }
+                else{
+                    strSize = String.valueOf((float)(Math.round(mbSize*100))/(100)) + "MB";
+
+                }
+                mData.add(new Record(fileName, createTime, duration, strSize));
 
                 Toast.makeText(this,fileName,Toast.LENGTH_SHORT).show();
 

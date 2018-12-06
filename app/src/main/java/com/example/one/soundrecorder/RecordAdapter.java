@@ -45,11 +45,13 @@ public class RecordAdapter extends BaseAdapter {
         TextView tv_fileName = (TextView)convertView.findViewById(R.id.tv_fileName);
         TextView tv_duration = (TextView)convertView.findViewById(R.id.tv_duration);
         TextView tv_createTime = (TextView)convertView.findViewById(R.id.tv_createTime);
+        TextView tv_size = (TextView)convertView.findViewById(R.id.tv_size);
 
         img.setImageResource(R.drawable.record_img);
         tv_fileName.setText(mData.get(position).getFileName());
         tv_duration.setText(mData.get(position).getDuration());
         tv_createTime.setText(mData.get(position).getCreateTime());
+        tv_size.setText(mData.get(position).getSize());
 
         return convertView;
     }
