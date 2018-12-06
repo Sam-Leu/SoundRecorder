@@ -10,7 +10,9 @@
     <ListView
         android:id="@+id/data_list"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content" >
+        android:layout_height="wrap_content"
+        android:divider="#b4b4b4"
+        android:dividerHeight="0.3dp">
 
     </ListView>
 
