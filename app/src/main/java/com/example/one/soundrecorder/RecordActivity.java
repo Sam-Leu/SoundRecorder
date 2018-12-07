@@ -6,8 +6,14 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.View;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.LinkedList;
@@ -22,9 +28,14 @@ public class RecordActivity extends AppCompatActivity {
     SQLiteDatabase db;
 
     private List<Record> mData = null;
+    private List<Record> selectList = null;
     private Context mContext;
     private RecordAdapter mAdapter = null;
     private ListView data_list;
+
+    private static boolean isShow;
+
+    private LinearLayout linearLayout;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,18 +47,16 @@ public class RecordActivity extends AppCompatActivity {
         mContext = RecordActivity.this;
         data_list = (ListView)findViewById(R.id.data_list);
 
-        entries = new Vector<String>();
-
         mData = new LinkedList<Record>();
+        selectList = new LinkedList<Record>();
 
-
-        //create_list();
         showRecord();
+
+
     }
 
     //显示记录
     private void showRecord(){
-        //mData.clear();
 
         db = dbHelper.getReadableDatabase();
 
@@ -63,7 +72,7 @@ public class RecordActivity extends AppCompatActivity {
                 String duration = cursor.getString(cursor.getColumnIndex("duration"));
                 float size = cursor.getFloat(cursor.getColumnIndex("size"));
                 float kbSize = size/1000;
-                float mbSize = size/1024000;
+                float mbSize = size/1000000;
                 String strSize = "0.00KB";
                 if(size < 819200){
                     strSize = String.valueOf((float)(Math.round(kbSize*100))/(100)) + "KB";
@@ -84,6 +93,57 @@ public class RecordActivity extends AppCompatActivity {
 
         mAdapter = new RecordAdapter((LinkedList<Record>) mData, mContext);
         data_list.setAdapter(mAdapter);
+        //mAdapter.setOnShowItemClickListener(this);
+
+        data_list.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
+            @Override
+            public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
+                Toast.makeText(RecordActivity.this,"111",Toast.LENGTH_SHORT).show();
+                if(isShow){
+                    return false;
+                }
+                else {
+                    isShow = true;
+                    for(Record record : mData){
+                        record.setShow(true);
+                    }
+                    mAdapter.notifyDataSetChanged();
+                    showOperate();
+                    data_list.setLongClickable(false);
+                }
+                return false;
+            }
+        });
+
+    }
+
+    private void showOperate() {
+        linearLayout.setVisibility(View.VISIBLE);
+        Animation animation = AnimationUtils.loadAnimation(this, R.anim.operate_in);
+        linearLayout.setAnimation(animation);
+
+        TextView tv_back = (TextView)findViewById(R.id.operate_back);
+        TextView tv_select = (TextView)findViewById(R.id.operate_select);
+        TextView tv_invert_select = (TextView)findViewById(R.id.invert_select);
+        TextView tv_delete = (TextView)findViewById(R.id.operate_delete);
+
+        tv_back.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(isShow){
+                    selectList.clear();
+                    for (Record record:mData){
+                        record.setChecked(false);
+                        record.setShow(false);
+                    }
+
+                    mAdapter.notifyDataSetChanged();
+                    isShow = false;
+                    data_list.setLongClickable(true);
+                    //dismissOperate();
+                }
+            }
+        });
 
 
     }

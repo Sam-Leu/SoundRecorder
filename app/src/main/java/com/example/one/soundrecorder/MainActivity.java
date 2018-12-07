@@ -42,6 +42,8 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        PermissionUtils.isGrantExternalRW(this,1);
+
         startBtn = findViewById(R.id.startBtn);
         stopBtn = findViewById(R.id.stopBtn);
         stopBtn.setEnabled(false);

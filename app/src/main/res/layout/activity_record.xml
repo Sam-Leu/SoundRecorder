@@ -9,11 +9,49 @@
 
     <ListView
         android:id="@+id/data_list"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:divider="#b4b4b4"
         android:dividerHeight="0.3dp">
 
     </ListView>
+
+    <LinearLayout
+        android:id="@+id/linearlayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/operate_back"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="返回"/>
+
+        <TextView
+            android:id="@+id/operate_select"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="全选"/>
+
+        <TextView
+            android:id="@+id/invert_select"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="反选"/>
+
+        <TextView
+            android:id="@+id/operate_delete"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="删除"/>
+
+
+    </LinearLayout>
 
 </LinearLayout>
