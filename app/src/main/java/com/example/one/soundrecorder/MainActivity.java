@@ -1,51 +1,43 @@
 package com.example.one.soundrecorder;
 
-import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.ContentValues;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.database.sqlite.SQLiteDatabase;
 import android.media.MediaRecorder;
-import android.net.Uri;
 import android.os.Environment;
 import android.os.Handler;
-import android.provider.Settings;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.view.KeyEvent;
+import android.telephony.mbms.FileInfo;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
-
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 
-//实现ActivityCompat.OnRequestPermissionsResultCallback接口，运行时检测权限
+
 public class MainActivity extends AppCompatActivity {
-
     private DatabaseHelper dbHelper;
     private SQLiteDatabase db;
 
-    private Boolean isStart = false;
+    private Boolean recording = false;
     private MediaRecorder mediaRecorder = null;
     private Button startBtn;
     private Button stopBtn;
+    private Button historyBtn;
     private int timeCount = 0;
     private TextView timeTextView;
     private Handler handler=new Handler();
-    private File soundsFolder = null;
     private File soundFile = null;
     private Date createTime = null;
-
+    private AlertDialog.Builder dialogBuilder;
 
     @SuppressLint("SimpleDateFormat")
     private SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -64,7 +56,7 @@ public class MainActivity extends AppCompatActivity {
 
         dbHelper = new DatabaseHelper(this,1);
 
-        Button historyBtn = findViewById(R.id.historyBtn);
+        historyBtn = findViewById(R.id.historyBtn);
         historyBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -81,7 +73,7 @@ public class MainActivity extends AppCompatActivity {
 
         values.put("createtime",dateFormat.format(createTime));
         values.put("duration",showTimeCount(timeCount));
-        values.put("filename",fileName);
+        values.put("filename",fileName.substring(0, fileName.lastIndexOf(".amr")));
         values.put("filepath",filePath);
         values.put("size",fileLength);  //存的单位是Byte
         db.insert("recorder_info", null, values);
@@ -102,18 +94,18 @@ public class MainActivity extends AppCompatActivity {
     //录音按钮被按下
     @SuppressLint("NewApi")
     public void startBtnOnClick(View v){
-        if(!isStart){
+        if(!recording){
             startRecord();
-            startBtn.setBackgroundResource(R.drawable.start2);
-            isStart = true;
+            startBtn.setBackgroundResource(R.drawable.start);
+            recording = true;
             stopBtn.setEnabled(true);
             stopBtn.setBackgroundResource(R.drawable.stop);
             runnable.run();
         }else{
             mediaRecorder.pause();
             handler.removeCallbacks(runnable);
-            startBtn.setBackgroundResource(R.drawable.pause2);
-            isStart = false;
+            startBtn.setBackgroundResource(R.drawable.pause);
+            recording = false;
         }
     }
 
@@ -139,12 +131,12 @@ public class MainActivity extends AppCompatActivity {
     private void startRecord(){
         if(mediaRecorder == null){
             // 存放录音文件的文件夹sounds
-            soundsFolder = new File(Environment.getExternalStorageDirectory(),"sounds");
+            File soundsFolder = new File(Environment.getExternalStorageDirectory(), "sounds");
             if(!soundsFolder.exists()){
                 soundsFolder.mkdirs();
             }
             // 获取当前时间作为文件名创建一个以.amr为后缀的录音文件
-            soundFile = new File(soundsFolder,dateFormat.format((createTime = new Date()))+".amr");
+            soundFile = new File(soundsFolder,"temp_record.amr");
             if(!soundFile.exists()){
                 try {
                     soundFile.createNewFile();
@@ -172,16 +164,84 @@ public class MainActivity extends AppCompatActivity {
             mediaRecorder.stop();
             handler.removeCallbacks(runnable);
 
-            insert(timeCount, soundFile.getName(), soundFile.getAbsolutePath(), (int) soundFile.length());
+            dialogBuilder = new AlertDialog.Builder(MainActivity.this);
+            dialogBuilder.setTitle("为该录音起个名字");
+            @SuppressLint("SimpleDateFormat")
+            SimpleDateFormat newDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            final EditText setNameText = new EditText(MainActivity.this);
+            createTime = new Date();
+            setNameText.setText(String.valueOf(newDateFormat.format(createTime)));
+            dialogBuilder.setView(setNameText);
+            dialogBuilder.setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    soundFile = reName(soundFile, String.valueOf(setNameText.getText()));
+                    if(soundFile != null){
+                        insert(timeCount, soundFile.getName(), soundFile.getAbsolutePath(), (int) soundFile.length());
+                    }else{
+                        System.out.println("应该是名字重复了。");
+                    }
+                }
+            } );
+            dialogBuilder.setNegativeButton("取消", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    soundFile = reName(soundFile, String.valueOf(setNameText.getText()));
+                    if(soundFile != null){
+                        insert(timeCount, soundFile.getName(), soundFile.getAbsolutePath(), (int) soundFile.length());
+                    }else{
+                        System.out.println("应该是名字重复了。");
+                    }
+                }
+            });
+            dialogBuilder.show();
 
             timeCount = 0;
             timeTextView.setText(R.string.initialZero); //时间复位为0
-
             mediaRecorder.release();
             mediaRecorder = null;
             startBtn.setBackgroundResource(R.drawable.prepare);
             stopBtn.setBackgroundResource(R.drawable.stop2);
-            isStart = false;
+            historyBtn.setBackgroundResource(R.drawable.history);
+            recording = false;
+        }
+    }
+
+    /**
+     * @param f 需要修改名称的文件
+     * @param newFileName 新名称
+     * @return
+     */
+    private File reName(File f, String newFileName) {
+        String filePath = f.getAbsolutePath();
+        if (!f.exists()) { // 判断原文件是否存在
+            System.out.println("原文件不存在。");
+            return null;
+        }
+        newFileName = newFileName.trim();
+        if ("".equals(newFileName)){ // 文件名不能为空
+            System.out.println("新文件名为空");
+            return null;
+        }
+        String newFilePath;
+        if (f.isDirectory()) { // 判断是否为文件夹
+            newFilePath = filePath.substring(0, filePath.lastIndexOf("/")) + "/" + newFileName;
+        } else {
+            newFilePath = filePath.substring(0, filePath.lastIndexOf("/"))+ "/"  + newFileName + filePath.substring(filePath.lastIndexOf("."));
+        }
+        File newFile = new File(newFilePath);
+        if (!f.exists()) { // 判断需要修改为的文件是否存在（防止文件名冲突）
+            System.out.println("新文件创建不成功。");
+            return null;
+        }else{
+            System.out.println("新文件："+newFile.getAbsolutePath());
+        }
+        try {
+            f.renameTo(newFile); // 修改文件名
+            return newFile;
+        } catch(Exception err) {
+            err.printStackTrace();
+            return null;
         }
     }
 }
