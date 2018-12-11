@@ -39,6 +39,4 @@ public class PermissionUtils {
         //说明已经授权
         return true;
     }
-
-
 }

@@ -8,39 +8,65 @@ import android.database.sqlite.SQLiteDatabase;
 import android.media.MediaRecorder;
 import android.os.Environment;
 import android.os.Handler;
+import android.os.Message;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.telephony.mbms.FileInfo;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+
+import com.carlos.voiceline.mylibrary.VoiceLineView;
+
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements Runnable {
     private DatabaseHelper dbHelper;
-    private SQLiteDatabase db;
+    private SQLiteDatabase database;
 
-    private Boolean recording = false;
+    private Boolean recording = false;  //用于判断是否正在录音
     private MediaRecorder mediaRecorder = null;
-    private Button startBtn;
-    private Button stopBtn;
-    private Button historyBtn;
-    private int timeCount = 0;
-    private TextView timeTextView;
-    private Handler handler=new Handler();
-    private File soundFile = null;
-    private Date createTime = null;
-    private AlertDialog.Builder dialogBuilder;
+    private Button startBtn;    //开始录音按钮
+    private Button stopBtn;     //停止录音按钮
+    private Button historyBtn;  //录音列表按钮
+    private int timeCount = 0;  //录音计时变量
+    private TextView timeTextView;  //录音计时显示
+    private TextView recordTextView;    //录音状态显示
+    private TextView stopRecordTextView;    //完成录音状态显示
+    private VoiceLineView voiceLineView;    //音波波浪线
+
+    private File soundFile = null;  //录音文件
+    private Date createTime = null; //录音停止时为录音创建时间
+    private AlertDialog.Builder dialogBuilder;  //显示录音结束时重命名的弹窗
+
+    private Thread thread;
+
+    @SuppressLint("HandlerLeak")
+    private Handler handler=new Handler(){
+        @Override
+        public void handleMessage(Message msg) {
+            super.handleMessage(msg);
+            if(mediaRecorder==null) return;
+            double ratio = (double) mediaRecorder.getMaxAmplitude() / 100;
+            double db = 0;// 分贝
+            //默认的最大音量是100,可以修改，但其实默认的，在测试过程中就有不错的表现
+            //你可以传自定义的数字进去，但需要在一定的范围内，比如0-200，就需要在xml文件中配置maxVolume
+            //同时，也可以配置灵敏度sensibility
+            if (ratio > 1)
+                db = 20 * Math.log10(ratio);
+            //只要有一个线程，不断调用这个方法，就可以使波形变化
+            //主要，这个方法必须在ui线程中调用
+            voiceLineView.setVolume((int) (db));
+        }
+    };
 
     @SuppressLint("SimpleDateFormat")
-    private SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    private SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");  //录音文件创建时间的时间格式
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,6 +79,10 @@ public class MainActivity extends AppCompatActivity {
         stopBtn = findViewById(R.id.stopBtn);
         stopBtn.setEnabled(false);
         timeTextView = findViewById(R.id.timeTextView);
+        recordTextView = findViewById(R.id.recordTextView);
+        stopRecordTextView = findViewById(R.id.stopRecordTextView);
+
+        voiceLineView = findViewById(R.id.voicLine);
 
         dbHelper = new DatabaseHelper(this,1);
 
@@ -62,13 +92,15 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 Intent intent = new Intent(MainActivity.this,RecordActivity.class);
                 startActivity(intent);
+                //点击前往录音列表页面后，录音历史记录列表按钮样式复位
+                historyBtn.setBackgroundResource(R.drawable.history2);
             }
         });
     }
 
     //录音文件数据录入数据库
     public void insert(int timeCount, String fileName, String filePath, int fileLength){
-        db = dbHelper.getWritableDatabase();
+        database = dbHelper.getWritableDatabase();
         ContentValues values = new ContentValues();
 
         values.put("createtime",dateFormat.format(createTime));
@@ -76,7 +108,7 @@ public class MainActivity extends AppCompatActivity {
         values.put("filename",fileName.substring(0, fileName.lastIndexOf(".amr")));
         values.put("filepath",filePath);
         values.put("size",fileLength);  //存的单位是Byte
-        db.insert("recorder_info", null, values);
+        database.insert("recorder_info", null, values);
     }
 
     Runnable runnable=new Runnable(){
@@ -96,16 +128,22 @@ public class MainActivity extends AppCompatActivity {
     public void startBtnOnClick(View v){
         if(!recording){
             startRecord();
-            startBtn.setBackgroundResource(R.drawable.start);
             recording = true;
             stopBtn.setEnabled(true);
             stopBtn.setBackgroundResource(R.drawable.stop);
+            stopRecordTextView.setText("完成");
+            startBtn.setBackgroundResource(R.drawable.pause);
+            recordTextView.setText("暂停");
+            thread = new Thread(this);
+            thread.start();
             runnable.run();
         }else{
             mediaRecorder.pause();
             handler.removeCallbacks(runnable);
-            startBtn.setBackgroundResource(R.drawable.pause);
+            startBtn.setBackgroundResource(R.drawable.start);
+            recordTextView.setText("录音");
             recording = false;
+            thread.interrupt();
         }
     }
 
@@ -164,13 +202,13 @@ public class MainActivity extends AppCompatActivity {
             mediaRecorder.stop();
             handler.removeCallbacks(runnable);
 
+            //录音文件重命名弹窗
             dialogBuilder = new AlertDialog.Builder(MainActivity.this);
             dialogBuilder.setTitle("为该录音起个名字");
             @SuppressLint("SimpleDateFormat")
-            SimpleDateFormat newDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
             final EditText setNameText = new EditText(MainActivity.this);
             createTime = new Date();
-            setNameText.setText(String.valueOf(newDateFormat.format(createTime)));
+            setNameText.setText(String.valueOf(dateFormat.format(createTime)));
             dialogBuilder.setView(setNameText);
             dialogBuilder.setPositiveButton("确定", new DialogInterface.OnClickListener() {
                 @Override
@@ -178,6 +216,7 @@ public class MainActivity extends AppCompatActivity {
                     soundFile = reName(soundFile, String.valueOf(setNameText.getText()));
                     if(soundFile != null){
                         insert(timeCount, soundFile.getName(), soundFile.getAbsolutePath(), (int) soundFile.length());
+                        timeCount = 0;
                     }else{
                         System.out.println("应该是名字重复了。");
                     }
@@ -189,6 +228,7 @@ public class MainActivity extends AppCompatActivity {
                     soundFile = reName(soundFile, String.valueOf(setNameText.getText()));
                     if(soundFile != null){
                         insert(timeCount, soundFile.getName(), soundFile.getAbsolutePath(), (int) soundFile.length());
+                        timeCount = 0;
                     }else{
                         System.out.println("应该是名字重复了。");
                     }
@@ -196,14 +236,17 @@ public class MainActivity extends AppCompatActivity {
             });
             dialogBuilder.show();
 
-            timeCount = 0;
-            timeTextView.setText(R.string.initialZero); //时间复位为0
+            timeTextView.setText(R.string.initialZero); //时间显示组件复位为00:00:00
             mediaRecorder.release();
             mediaRecorder = null;
+            //按钮样式变动
             startBtn.setBackgroundResource(R.drawable.prepare);
+            recordTextView.setText("录音");
             stopBtn.setBackgroundResource(R.drawable.stop2);
-            historyBtn.setBackgroundResource(R.drawable.history);
+            stopBtn.setEnabled(false);  //录音已经停止，使停止按钮不能点击
+            historyBtn.setBackgroundResource(R.drawable.history);   //完成录音，录音历史列表里有新录音，使历史列表按钮变色
             recording = false;
+            thread.interrupt();
         }
     }
 
@@ -242,6 +285,23 @@ public class MainActivity extends AppCompatActivity {
         } catch(Exception err) {
             err.printStackTrace();
             return null;
+        }
+    }
+
+    public void aboutBtnOnClick(View v){
+        Intent intent = new Intent(MainActivity.this,AboutActivity.class);
+        startActivity(intent);
+    }
+
+    @Override
+    public void run() {
+        while (recording) {
+            handler.sendEmptyMessage(0);
+            try {
+                thread.sleep(10);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
     }
 }
