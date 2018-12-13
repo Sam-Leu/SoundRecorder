@@ -11,10 +11,8 @@ public class PermissionUtils {
     private static String[] PERMISSIONS = {
             Manifest.permission.READ_EXTERNAL_STORAGE,
             Manifest.permission.WRITE_EXTERNAL_STORAGE,
-            Manifest.permission.CAMERA,
             Manifest.permission.RECORD_AUDIO   //录音权限
     };
-
 
     /**
      * 解决安卓6.0以上版本不能读取外部存储权限的问题
@@ -25,13 +23,12 @@ public class PermissionUtils {
      */
     public static boolean isGrantExternalRW(Activity activity, int requestCode) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-
-            int storagePermission = activity.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE);
-            int cameraPermission = activity.checkSelfPermission(Manifest.permission.CAMERA);
+            int writeStoragePermission = activity.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE);
+            int readStoragePermission = activity.checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE);
             int recorderPermission = activity.checkSelfPermission(Manifest.permission.RECORD_AUDIO);
             //检测是否有权限，如果没有权限，就需要申请
-            if (storagePermission != PackageManager.PERMISSION_GRANTED ||
-                    cameraPermission != PackageManager.PERMISSION_GRANTED ||
+            if (writeStoragePermission != PackageManager.PERMISSION_GRANTED ||
+                    readStoragePermission != PackageManager.PERMISSION_GRANTED ||
                     recorderPermission != PackageManager.PERMISSION_GRANTED) {
                 //申请权限
                 activity.requestPermissions(PERMISSIONS, requestCode);
@@ -42,8 +39,4 @@ public class PermissionUtils {
         //说明已经授权
         return true;
     }
-
-
-
-
 }
