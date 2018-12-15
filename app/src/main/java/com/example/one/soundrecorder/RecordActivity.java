@@ -16,6 +16,8 @@ import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.AdapterView;
+import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -43,6 +45,8 @@ public class RecordActivity extends AppCompatActivity implements RecordAdapter.O
     private Context mContext;
     private RecordAdapter mAdapter = null;
     private ListView data_list;
+    private Button btn_rename = null;
+    private CheckBox cb_click = null;
 
     private static boolean isShow;
 
@@ -60,6 +64,7 @@ public class RecordActivity extends AppCompatActivity implements RecordAdapter.O
 
         topLayout = (LinearLayout) findViewById(R.id.toplayout);
         bottomLayout = (LinearLayout) findViewById(R.id.bottomlayout);
+        btn_rename = (Button) findViewById(R.id.operate_rename);
 
         mContext = RecordActivity.this;
         data_list = (ListView) findViewById(R.id.data_list);
@@ -118,6 +123,7 @@ public class RecordActivity extends AppCompatActivity implements RecordAdapter.O
         data_list.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
             @Override
             public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
+                btn_rename.setEnabled(true);
                 if (isShow) {
                     return false;
                 } else {
@@ -144,12 +150,14 @@ public class RecordActivity extends AppCompatActivity implements RecordAdapter.O
         topLayout.setAnimation(animation_top);
         topLayout.setVisibility(View.VISIBLE);
 
-        TextView tv_back = (TextView) findViewById(R.id.operate_back);
-        TextView tv_select = (TextView) findViewById(R.id.operate_select);
-        TextView tv_invert_select = (TextView) findViewById(R.id.invert_select);
-        TextView tv_delete = (TextView) findViewById(R.id.operate_delete);
+        Button btn_back = (Button) findViewById(R.id.operate_back);
+        Button btn_select = (Button) findViewById(R.id.operate_select);
+        Button btn_invert_select = (Button) findViewById(R.id.invert_select);
+        Button btn_delete = (Button) findViewById(R.id.operate_delete);
+        cb_click = (CheckBox)findViewById(R.id.cb_select);
 
-        tv_back.setOnClickListener(new View.OnClickListener() {
+
+        btn_back.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (isShow) {
@@ -167,7 +175,7 @@ public class RecordActivity extends AppCompatActivity implements RecordAdapter.O
             }
         });
 
-        tv_select.setOnClickListener(new View.OnClickListener() {
+        btn_select.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 for (Record record : mData) {
@@ -177,12 +185,14 @@ public class RecordActivity extends AppCompatActivity implements RecordAdapter.O
                             selectList.add(record);
                         }
                     }
+
                 }
+
                 mAdapter.notifyDataSetChanged();
             }
         });
 
-        tv_invert_select.setOnClickListener(new View.OnClickListener() {
+        btn_invert_select.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 for (Record record : mData) {
@@ -191,18 +201,22 @@ public class RecordActivity extends AppCompatActivity implements RecordAdapter.O
                         if (!selectList.contains(record)) {
                             selectList.add(record);
                         }
-                    } else {
+
+                    }
+                    else {
                         record.setChecked(false);
                         if (!selectList.contains(record)) {
                             selectList.remove(record);
                         }
                     }
+
                 }
+
                 mAdapter.notifyDataSetChanged();
             }
         });
 
-        tv_delete.setOnClickListener(new View.OnClickListener() {
+        btn_delete.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (selectList != null && selectList.size() > 0) {
@@ -248,6 +262,25 @@ public class RecordActivity extends AppCompatActivity implements RecordAdapter.O
                     Toast.makeText(RecordActivity.this, "请选择条目", Toast.LENGTH_SHORT).show();
                 }
 
+            }
+        });
+        btn_rename.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String strFileName = null;
+                if (selectList.size() != 1){
+                    Toast.makeText(RecordActivity.this,"请只选择一个项目",Toast.LENGTH_SHORT).show();
+                    Log.d("4test", "rename_click");
+                }
+                else{
+                    for (Iterator<Record> dd = selectList.iterator(); dd.hasNext(); ) {
+                        Record str = dd.next();
+                        strFileName = str.getFileName();
+                    }
+                    Toast.makeText(RecordActivity.this,"重命名成功",Toast.LENGTH_SHORT).show();
+                    FileUtils.renameDialog(RecordActivity.this, filePath+"/"+strFileName+".amr", strFileName);
+                    Log.d("4test", "rename");
+                }
             }
         });
     }

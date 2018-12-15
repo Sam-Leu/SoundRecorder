@@ -18,7 +18,7 @@ public class PlayActivity extends AppCompatActivity implements View.OnClickListe
     private Button play;
     private ProgressBar progressBar;
     private MediaPlayer mediaPlayer = new MediaPlayer();
-    private String filePath = "/storage/emulated/0/sounds/";
+    private String filePath = Environment.getExternalStorageDirectory().getAbsolutePath()+"/sounds/";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,8 +38,9 @@ public class PlayActivity extends AppCompatActivity implements View.OnClickListe
 
     private void initMediaPlayer(String fileName){
         try {
-            File file = new File(Environment.getExternalStorageDirectory(),fileName);
-            mediaPlayer.setDataSource(filePath);  //指定音频文件的路径
+            File file = new File(Environment.getExternalStorageDirectory(),"/sounds/"+fileName+".amr");
+            Log.d("4test", file.getPath());
+            mediaPlayer.setDataSource(String.valueOf(file));  //指定音频文件的路径
             mediaPlayer.prepare();  //让Mediaplayer进入到准备状态
         } catch (IOException e) {
             e.printStackTrace();
