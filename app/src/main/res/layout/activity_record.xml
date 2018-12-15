@@ -7,12 +7,23 @@
     android:orientation="vertical"
     tools:context=".RecordActivity">
 
+    <TextView
+        android:id="@+id/toprec"
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:padding="10dp"
+        android:gravity="center"
+        android:background="@color/colorPrimaryDark"
+        android:textSize="14dp"
+        android:textColor="#ffffff"
+        android:text="录音记录"/>
+
     <ListView
         android:id="@+id/data_list"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:divider="#b4b4b4"
-        android:layout_below="@id/toplayout"
+        android:layout_below="@id/toprec"
         android:layout_above="@id/bottomlayout"
         android:dividerHeight="0.3dp">
 
@@ -22,7 +33,7 @@
         android:id="@+id/toplayout"
         android:visibility="gone"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="40dp"
         android:background="#00f0f0"
         android:layout_alignParentTop="true"
         android:weightSum="3"
@@ -36,7 +47,7 @@
             android:layout_weight="1"
             android:gravity="center"
             android:text="取消"
-            android:textSize="22sp"
+            android:textSize="14dp"
             android:background="#ffffff"
             android:paddingTop="10dp"
             android:paddingBottom="10dp"/>
@@ -48,8 +59,9 @@
             android:layout_weight="1"
             android:gravity="center"
             android:text="请选择项目"
-            android:textSize="22sp"
+            android:textSize="14dp"
             android:background="#ffffff"
+            android:clickable="false"
             android:paddingTop="10dp"
             android:paddingBottom="10dp" />
 
@@ -60,7 +72,7 @@
             android:layout_weight="1"
             android:gravity="center"
             android:text="重命名"
-            android:textSize="22sp"
+            android:textSize="14dp"
             android:background="#ffffff"
             android:paddingTop="10dp"
             android:paddingBottom="10dp"/>
@@ -73,7 +85,7 @@
         android:id="@+id/bottomlayout"
         android:visibility="gone"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="40dp"
         android:background="#00f0f0"
         android:layout_alignParentBottom="true"
         android:weightSum="3"
@@ -88,7 +100,7 @@
             android:layout_weight="1"
             android:gravity="center"
             android:text="全选"
-            android:textSize="22sp"
+            android:textSize="14dp"
             android:background="#ffffff"
             android:paddingTop="10dp"
             android:paddingBottom="10dp" />
@@ -100,7 +112,7 @@
             android:layout_weight="1"
             android:gravity="center"
             android:text="反选"
-            android:textSize="22sp"
+            android:textSize="14dp"
             android:background="#ffffff"
             android:paddingTop="10dp"
             android:paddingBottom="10dp"/>
@@ -112,7 +124,7 @@
             android:layout_weight="1"
             android:gravity="center"
             android:text="删除"
-            android:textSize="22sp"
+            android:textSize="14dp"
             android:background="#ffffff"
             android:paddingTop="10dp"
             android:paddingBottom="10dp"/>
