@@ -12,37 +12,76 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:divider="#b4b4b4"
-        android:layout_alignParentTop="true"
-        android:layout_above="@id/linearlayout"
+        android:layout_below="@id/toplayout"
+        android:layout_above="@id/bottomlayout"
         android:dividerHeight="0.3dp">
 
     </ListView>
 
     <LinearLayout
-        android:id="@+id/linearlayout"
+        android:id="@+id/toplayout"
         android:visibility="gone"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="#00f0f0"
-        android:layout_alignParentBottom="true"
-        android:weightSum="4"
+        android:layout_alignParentTop="true"
+        android:weightSum="3"
         android:orientation="horizontal">
 
 
-        <TextView
+        <Button
             android:id="@+id/operate_back"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:gravity="center"
-            android:text="返回"
+            android:text="取消"
             android:textSize="22sp"
             android:background="#ffffff"
             android:paddingTop="10dp"
             android:paddingBottom="10dp"/>
 
 
-        <TextView
+        <Button
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="请选择项目"
+            android:textSize="22sp"
+            android:background="#ffffff"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp" />
+
+        <Button
+            android:id="@+id/operate_rename"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="重命名"
+            android:textSize="22sp"
+            android:background="#ffffff"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp"/>
+
+
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/bottomlayout"
+        android:visibility="gone"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#00f0f0"
+        android:layout_alignParentBottom="true"
+        android:weightSum="3"
+        android:orientation="horizontal">
+
+
+
+        <Button
             android:id="@+id/operate_select"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -54,7 +93,7 @@
             android:paddingTop="10dp"
             android:paddingBottom="10dp" />
 
-        <TextView
+        <Button
             android:id="@+id/invert_select"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -66,7 +105,7 @@
             android:paddingTop="10dp"
             android:paddingBottom="10dp"/>
 
-        <TextView
+        <Button
             android:id="@+id/operate_delete"
             android:layout_width="0dp"
             android:layout_height="wrap_content"

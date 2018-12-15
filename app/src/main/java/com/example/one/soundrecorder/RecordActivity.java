@@ -2,28 +2,25 @@ package com.example.one.soundrecorder;
 
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.media.MediaMetadataRetriever;
-import android.media.MediaPlayer;
-import android.media.MediaScannerConnection;
-import android.net.Uri;
-import android.os.Environment;
-import android.provider.MediaStore;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
-import android.widget.Adapter;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
+
 
 import java.io.File;
 import java.io.IOException;
@@ -33,11 +30,10 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Vector;
 
 import static android.os.Environment.getExternalStorageDirectory;
 
-public class RecordActivity extends AppCompatActivity implements RecordAdapter.OnShowItemClickListener{
+public class RecordActivity extends AppCompatActivity implements RecordAdapter.OnShowItemClickListener {
 
     private DatabaseHelper dbHelper;
     SQLiteDatabase db;
@@ -50,7 +46,8 @@ public class RecordActivity extends AppCompatActivity implements RecordAdapter.O
 
     private static boolean isShow;
 
-    private LinearLayout linearLayout;
+    private LinearLayout topLayout;
+    private LinearLayout bottomLayout;
     private String filePath = "/storage/emulated/0/sounds";
 
     @Override
@@ -58,11 +55,14 @@ public class RecordActivity extends AppCompatActivity implements RecordAdapter.O
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_record);
 
-        dbHelper = new DatabaseHelper(this,1);
-        linearLayout = (LinearLayout)findViewById(R.id.linearlayout);
+
+        dbHelper = new DatabaseHelper(this, 1);
+
+        topLayout = (LinearLayout) findViewById(R.id.toplayout);
+        bottomLayout = (LinearLayout) findViewById(R.id.bottomlayout);
 
         mContext = RecordActivity.this;
-        data_list = (ListView)findViewById(R.id.data_list);
+        data_list = (ListView) findViewById(R.id.data_list);
 
         mData = new LinkedList<Record>();
         selectList = new LinkedList<Record>();
@@ -76,12 +76,12 @@ public class RecordActivity extends AppCompatActivity implements RecordAdapter.O
 
 
     //显示记录
-    private void showRecord(){
+    private void showRecord() {
 
         db = dbHelper.getReadableDatabase();
 
         String sql = "select * from recorder_info order by createtime ASC";
-        Cursor cursor = db.rawQuery(sql,null);
+        Cursor cursor = db.rawQuery(sql, null);
 
         if (cursor.moveToFirst()) {
             do {
@@ -103,16 +103,26 @@ public class RecordActivity extends AppCompatActivity implements RecordAdapter.O
         data_list.setAdapter(mAdapter);
         mAdapter.setOnShowItemClickListener(this);
 
+        data_list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                Record recordClick = mData.get(position);
+                String clickName = recordClick.getFileName();
+                Log.d("4test", clickName);
+                Intent intent = new Intent(RecordActivity.this,PlayActivity.class);
+                intent.putExtra("fileName",clickName);
+                startActivity(intent);
+            }
+        });
+
         data_list.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
             @Override
             public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
-                Toast.makeText(RecordActivity.this,"111",Toast.LENGTH_SHORT).show();
-                if(isShow){
+                if (isShow) {
                     return false;
-                }
-                else {
+                } else {
                     isShow = true;
-                    for(Record record : mData){
+                    for (Record record : mData) {
                         record.setShow(true);
                     }
                     mAdapter.notifyDataSetChanged();
@@ -126,21 +136,25 @@ public class RecordActivity extends AppCompatActivity implements RecordAdapter.O
     }
 
     private void showOperate() {
-        Animation animation = AnimationUtils.loadAnimation(this, R.anim.operate_in);
-        linearLayout.setAnimation(animation);
-        linearLayout.setVisibility(View.VISIBLE);
+        Animation animation_bottom = AnimationUtils.loadAnimation(this, R.anim.operate_bottom_in);
+        bottomLayout.setAnimation(animation_bottom);
+        bottomLayout.setVisibility(View.VISIBLE);
 
-        TextView tv_back = (TextView)findViewById(R.id.operate_back);
-        TextView tv_select = (TextView)findViewById(R.id.operate_select);
-        TextView tv_invert_select = (TextView)findViewById(R.id.invert_select);
-        TextView tv_delete = (TextView)findViewById(R.id.operate_delete);
+        Animation animation_top = AnimationUtils.loadAnimation(this, R.anim.operate_top_in);
+        topLayout.setAnimation(animation_top);
+        topLayout.setVisibility(View.VISIBLE);
+
+        TextView tv_back = (TextView) findViewById(R.id.operate_back);
+        TextView tv_select = (TextView) findViewById(R.id.operate_select);
+        TextView tv_invert_select = (TextView) findViewById(R.id.invert_select);
+        TextView tv_delete = (TextView) findViewById(R.id.operate_delete);
 
         tv_back.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(isShow){
+                if (isShow) {
                     selectList.clear();
-                    for (Record record:mData){
+                    for (Record record : mData) {
                         record.setChecked(false);
                         record.setShow(false);
                     }
@@ -156,10 +170,10 @@ public class RecordActivity extends AppCompatActivity implements RecordAdapter.O
         tv_select.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                for(Record record:mData){
-                    if(!record.isChecked()){
+                for (Record record : mData) {
+                    if (!record.isChecked()) {
                         record.setChecked(true);
-                        if(!selectList.contains(record)){
+                        if (!selectList.contains(record)) {
                             selectList.add(record);
                         }
                     }
@@ -171,16 +185,15 @@ public class RecordActivity extends AppCompatActivity implements RecordAdapter.O
         tv_invert_select.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                for(Record record : mData){
-                    if(!record.isChecked()){
+                for (Record record : mData) {
+                    if (!record.isChecked()) {
                         record.setChecked(true);
-                        if (!selectList.contains(record)){
+                        if (!selectList.contains(record)) {
                             selectList.add(record);
                         }
-                    }
-                    else {
+                    } else {
                         record.setChecked(false);
-                        if (!selectList.contains(record)){
+                        if (!selectList.contains(record)) {
                             selectList.remove(record);
                         }
                     }
@@ -192,44 +205,73 @@ public class RecordActivity extends AppCompatActivity implements RecordAdapter.O
         tv_delete.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(selectList != null && selectList.size()>0){
-                    mData.removeAll(selectList);
-                    mAdapter.notifyDataSetChanged();
+                if (selectList != null && selectList.size() > 0) {
 
-                    for(Iterator<Record> dd = selectList.iterator(); dd.hasNext();){
-                        Record str = dd.next();
-                        String strFileName = str.getFileName();
-                        String pathName = "/sounds/"+strFileName+".amr";
-                        String aa = "/storage/emulated/0/sounds/"+strFileName+".amr";
-                        deletefile(pathName);
+                    AlertDialog.Builder builder=new AlertDialog.Builder(RecordActivity.this);
+                    builder.setMessage("确定删除?");
+                    builder.setTitle("提示");
 
-                    }
+                    //添加AlertDialog.Builder对象的setPositiveButton()方法
+                    builder.setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
 
-                    selectList.clear();
+                                Log.d("4test", "确定");
+                                for (Iterator<Record> dd = selectList.iterator(); dd.hasNext(); ) {
+                                    Record str = dd.next();
+                                    String strFileName = str.getFileName();
+                                    String pathName = "/sounds/" + strFileName + ".amr";
+                                    String aa = "/storage/emulated/0/sounds/" + strFileName + ".amr";
+
+                                    deletefile(pathName);
+                                }
+
+                                mData.removeAll(selectList);
+                                mAdapter.notifyDataSetChanged();
+                                selectList.clear();
+                        }
+                    });
+
+                    //添加AlertDialog.Builder对象的setNegativeButton()方法
+                    builder.setNegativeButton("取消", new DialogInterface.OnClickListener() {
+
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            Log.d("4test", "取消");
+                        }
+                    });
+
+                    builder.create().show();
+
+
+                } else {
+                    Toast.makeText(RecordActivity.this, "请选择条目", Toast.LENGTH_SHORT).show();
                 }
-                else {
-                    Toast.makeText(RecordActivity.this,"请选择条目",Toast.LENGTH_SHORT).show();
-                }
+
             }
         });
-
-
     }
 
+    /**
+     * 隐藏操作选项
+     */
     private void dismissOperate() {
-        Animation animation = AnimationUtils.loadAnimation(RecordActivity.this,R.anim.operate_out);
-        linearLayout.setAnimation(animation);
-        linearLayout.setVisibility(View.GONE);
+        Animation animation_bottom = AnimationUtils.loadAnimation(RecordActivity.this, R.anim.operate_bottom_out);
+        bottomLayout.setAnimation(animation_bottom);
+        bottomLayout.setVisibility(View.GONE);
+
+        Animation animation_top = AnimationUtils.loadAnimation(RecordActivity.this, R.anim.operate_top_out);
+        topLayout.setAnimation(animation_top);
+        topLayout.setVisibility(View.GONE);
 
     }
 
 
     @Override
     public void onShowItemClick(Record record) {
-        if(record.isChecked() && !selectList.contains(record)){
+        if (record.isChecked() && !selectList.contains(record)) {
             selectList.add(record);
-        }
-        else if(!record.isChecked() && selectList.contains(record)){
+        } else if (!record.isChecked() && selectList.contains(record)) {
             selectList.remove(record);
         }
     }
@@ -241,9 +283,9 @@ public class RecordActivity extends AppCompatActivity implements RecordAdapter.O
 
     @Override
     public void onBackPressed() {
-        if(isShow){
+        if (isShow) {
             selectList.clear();
-            for(Record record : mData){
+            for (Record record : mData) {
                 record.setChecked(false);
                 record.setShow(false);
             }
@@ -251,56 +293,59 @@ public class RecordActivity extends AppCompatActivity implements RecordAdapter.O
             isShow = false;
             data_list.setLongClickable(true);
             dismissOperate();
-        }
-        else {
+        } else {
             super.onBackPressed();
         }
     }
 
 
-    //将秒数格式化成时分秒格式
+    /**
+     * 将秒数格式化成时分秒格式
+     *
+     * @param time
+     * @return
+     */
     public static String showTimeCount(int time) {
 
         long hours = time / (1000 * 60 * 60);
-        long minutes = (time-hours*(1000 * 60 * 60 ))/(1000* 60);
-        long seconds = (time-hours*(1000 * 60 * 60 )-minutes*(1000* 60))/1000;
+        long minutes = (time - hours * (1000 * 60 * 60)) / (1000 * 60);
+        long seconds = (time - hours * (1000 * 60 * 60) - minutes * (1000 * 60)) / 1000;
 
         String strHour = "00";
         String strMinute = "00";
         String strSecond = "00";
 
-        if(hours < 10){
-            strHour = "0"+hours;
-        }
-        else {
-            strHour = ""+hours;
-        }
-
-        if(minutes<10){
-            strMinute = "0"+minutes;
-
-        }
-        else{
-            strMinute = ""+minutes;
+        if (hours < 10) {
+            strHour = "0" + hours;
+        } else {
+            strHour = "" + hours;
         }
 
-        if (seconds<10){
-            strSecond = "0"+seconds;
+        if (minutes < 10) {
+            strMinute = "0" + minutes;
 
-        }
-        else {
-            strSecond = ""+seconds;
+        } else {
+            strMinute = "" + minutes;
         }
 
-        return strHour+":"+strMinute+":"+strSecond;
+        if (seconds < 10) {
+            strSecond = "0" + seconds;
+
+        } else {
+            strSecond = "" + seconds;
+        }
+
+        return strHour + ":" + strMinute + ":" + strSecond;
 
     }
 
     /**
      * 删除文件事件处理
+     *
      * @param fileName
      */
     public static void deletefile(String fileName) {
+
         try {
             // 找到文件所在的路径并删除该文件
             File file = new File(getExternalStorageDirectory(), fileName);
@@ -311,22 +356,26 @@ public class RecordActivity extends AppCompatActivity implements RecordAdapter.O
     }
 
 
+    /**
+     * 扫描指定文件夹并入库
+     * @param dir
+     */
     public void getFileInfo(File dir) {
         MediaMetadataRetriever mmr = new MediaMetadataRetriever();
 
-        if(!dir.exists()){
-            Log.d("4test","目录不存在");
+        if (!dir.exists()) {
+            Log.d("4test", "目录不存在");
             return;
         }
 
-        if(!dir.isDirectory()){
-            Log.d("4test","不是一个目录");
+        if (!dir.isDirectory()) {
+            Log.d("4test", "不是一个目录");
             return;
         }
 
         File files[] = dir.listFiles();
-        if(files != null && files.length > 0){
-            for(File file : files){
+        if (files != null && files.length > 0) {
+            for (File file : files) {
                 try {
 
                     String fileName = "";
@@ -335,21 +384,20 @@ public class RecordActivity extends AppCompatActivity implements RecordAdapter.O
                     String createTime = "0000-00-00 00:00:00";
 
                     String tempName = String.valueOf(file.getName());
-                    fileName = tempName.substring(0,tempName.length()-4);
+                    fileName = tempName.substring(0, tempName.length() - 4);
 
                     int mDuration = 0;
-                    mDuration = getAmrDuration(file)*1000;
+                    mDuration = getAmrDuration(file) * 1000;
                     fileDuration = showTimeCount(mDuration);
 
-                    int length = (int)file.length();
-                    float kbSize = length/1000;
-                    float mbSize = length/1000000;
+                    int length = (int) file.length();
+                    float kbSize = length / 1000;
+                    float mbSize = length / 1000000;
 
-                    if(length < 819200){
-                        strSize = String.valueOf((float)(Math.round(kbSize*100))/(100)) + "KB";
-                    }
-                    else{
-                        strSize = String.valueOf((float)(Math.round(mbSize*100))/(100)) + "MB";
+                    if (length < 819200) {
+                        strSize = String.valueOf((float) (Math.round(kbSize * 100)) / (100)) + "KB";
+                    } else {
+                        strSize = String.valueOf((float) (Math.round(mbSize * 100)) / (100)) + "MB";
 
                     }
 
@@ -358,16 +406,15 @@ public class RecordActivity extends AppCompatActivity implements RecordAdapter.O
                     db = dbHelper.getWritableDatabase();
                     ContentValues values = new ContentValues();
 
-                    values.put("createtime",createTime);
-                    values.put("duration",fileDuration);
-                    values.put("filename",fileName);
-                    values.put("filepath",filePath);
-                    values.put("size",strSize);
+                    values.put("createtime", createTime);
+                    values.put("duration", fileDuration);
+                    values.put("filename", fileName);
+                    values.put("filepath", filePath);
+                    values.put("size", strSize);
                     db.insert("recorder_info", null, values);
 
 
-                }
-                catch (IOException e){
+                } catch (IOException e) {
                     e.printStackTrace();
                 }
 
@@ -375,11 +422,17 @@ public class RecordActivity extends AppCompatActivity implements RecordAdapter.O
         }
     }
 
-
+    /**
+     * 获取amr文件播放时长
+     *
+     * @param file
+     * @return
+     * @throws IOException
+     */
     public static int getAmrDuration(File file) throws IOException {
         long duration = -1;
-        int[] packedSize = { 12, 13, 15, 17, 19, 20, 26, 31, 5, 0, 0, 0, 0, 0,
-                0, 0 };
+        int[] packedSize = {12, 13, 15, 17, 19, 20, 26, 31, 5, 0, 0, 0, 0, 0,
+                0, 0};
         RandomAccessFile randomAccessFile = null;
         try {
             randomAccessFile = new RandomAccessFile(file, "rw");
@@ -409,7 +462,6 @@ public class RecordActivity extends AppCompatActivity implements RecordAdapter.O
                 randomAccessFile.close();
             }
         }
-        return (int)((duration/1000)+1)/3;
+        return (int) ((duration / 1000) + 1) / 3;
     }
-
 }
