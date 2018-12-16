@@ -5,7 +5,9 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.support.v7.app.AlertDialog;
 import android.util.Log;
+import android.view.Gravity;
 import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.File;
@@ -72,7 +74,12 @@ public class FileUtils{
      */
     public static void renameDialog(final Context context, final String oldFilePath, final String initFileName) {
         final AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(context);
-        dialogBuilder.setTitle("为新文件起个名字吧");
+
+        TextView title = new TextView(dialogBuilder.getContext());
+        title.setGravity(Gravity.CENTER);
+        title.setTextSize(18);
+        title.setText("为该录音重新命名");
+        dialogBuilder.setCustomTitle(title);
 
         // 输入新文件名的文本框
         final EditText setNameTextView = new EditText(context);

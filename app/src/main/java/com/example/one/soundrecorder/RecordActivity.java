@@ -116,6 +116,7 @@ public class RecordActivity extends AppCompatActivity implements RecordAdapter.O
                 Log.d("4test", clickName);
                 Intent intent = new Intent(RecordActivity.this,PlayActivity.class);
                 intent.putExtra("fileName",clickName);
+                Log.i("发送filename:",clickName);
                 startActivity(intent);
             }
         });

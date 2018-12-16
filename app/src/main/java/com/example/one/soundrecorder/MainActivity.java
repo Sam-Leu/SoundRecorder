@@ -1,6 +1,7 @@
 package com.example.one.soundrecorder;
 
 import android.annotation.SuppressLint;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.media.MediaRecorder;
@@ -10,6 +11,8 @@ import android.os.Message;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.AttributeSet;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -36,7 +39,6 @@ public class MainActivity extends AppCompatActivity implements Runnable {
     private VoiceLineView voiceLineView;    //音波波浪线
 
     private File soundFile = null;  //录音文件
-    private Date createTime = null; //录音停止时为录音创建时间
 
     private Thread thread;
 
@@ -46,6 +48,7 @@ public class MainActivity extends AppCompatActivity implements Runnable {
         public void handleMessage(Message msg) {
             super.handleMessage(msg);
             if (mediaRecorder == null) return;
+
             double ratio = (double) mediaRecorder.getMaxAmplitude() / 100;
             double db = 0;// 分贝
             //默认的最大音量是100,可以修改，但其实默认的，在测试过程中就有不错的表现
@@ -55,7 +58,7 @@ public class MainActivity extends AppCompatActivity implements Runnable {
                 db = 20 * Math.log10(ratio);
             //只要有一个线程，不断调用这个方法，就可以使波形变化
             //主要，这个方法必须在ui线程中调用
-            voiceLineView.setVolume((int) (db));
+            voiceLineView.setVolume((int) (db*2));
         }
     };
 
@@ -113,16 +116,17 @@ public class MainActivity extends AppCompatActivity implements Runnable {
             stopRecordTextView.setText("完成");
             startBtn.setBackgroundResource(R.drawable.pause);
             recordTextView.setText("暂停");
-            thread = new Thread(this);
-            thread.start();
             runnable.run();
+            //录音状态禁止打开历史文件列表
+            historyBtn.setEnabled(false);
+            historyBtn.setBackgroundResource(R.drawable.history3);
         } else {
             mediaRecorder.pause();
             handler.removeCallbacks(runnable);
             startBtn.setBackgroundResource(R.drawable.start);
             recordTextView.setText("录音");
             recording = false;
-            thread.interrupt();
+            Log.i("n","暂停录音。");
         }
     }
 
@@ -169,9 +173,20 @@ public class MainActivity extends AppCompatActivity implements Runnable {
             try {
                 mediaRecorder.prepare();
                 mediaRecorder.start();  //开始录制
+                thread = new Thread(this);
+                thread.start();
+                Log.i("0","开始录音。");
             } catch (IOException e) {
                 e.printStackTrace();
             }
+        }else{
+//            try {
+//                mediaRecorder.prepare();
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
+            Log.i("m","继续录音。");
+            mediaRecorder.start();  //开始录制
         }
     }
 
@@ -195,73 +210,11 @@ public class MainActivity extends AppCompatActivity implements Runnable {
             stopBtn.setBackgroundResource(R.drawable.stop2);
             stopBtn.setEnabled(false);  //录音已经停止，使停止按钮不能点击
             historyBtn.setBackgroundResource(R.drawable.history);   //完成录音，录音历史列表里有新录音，使历史列表按钮变色
+            historyBtn.setEnabled(true);    //录音已经停止，可以查看历史录音信息了
             recording = false;
-            thread.interrupt();
+            Log.i("end","结束录音。");
         }
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//
-//    /**
-//     * @param f 需要修改名称的文件
-//     * @param newFileName 新名称
-//     * @return
-//     */
-//    private File renameFile(File f, String newFileName) {
-//        String filePath = f.getAbsolutePath();
-//        if (!f.exists()) { // 判断原文件是否存在
-//            System.out.println("原文件不存在。");
-//            return null;
-//        }
-//        newFileName = newFileName.trim();
-//        if ("".equals(newFileName)){ // 文件名不能为空
-//            System.out.println("新文件名为空");
-//            return null;
-//        }
-//        String newFilePath;
-//        if (f.isDirectory()) { // 判断是否为文件夹
-//            newFilePath = filePath.substring(0, filePath.lastIndexOf("/")) + "/" + newFileName;
-//        } else {
-//            newFilePath = filePath.substring(0, filePath.lastIndexOf("/"))+ "/"  + newFileName + filePath.substring(filePath.lastIndexOf("."));
-//        }
-//        File newFile = new File(newFilePath);
-//        if (!f.exists()) { // 判断需要修改为的文件是否存在（防止文件名冲突）
-//            System.out.println("新文件创建不成功。");
-//            return null;
-//        }else{
-//            System.out.println("新文件："+newFile.getAbsolutePath());
-//        }
-//        try {
-//            f.renameTo(newFile); // 修改文件名
-//            return newFile;
-//        } catch(Exception err) {
-//            err.printStackTrace();
-//            return null;
-//        }
-//    }
 
     public void aboutBtnOnClick(View v){
         Intent intent = new Intent(MainActivity.this,AboutActivity.class);
@@ -270,8 +223,10 @@ public class MainActivity extends AppCompatActivity implements Runnable {
 
     @Override
     public void run() {
-        while (recording) {
-            handler.sendEmptyMessage(0);
+        while (true) {
+            if(recording){
+                handler.sendEmptyMessage(0);
+            }
             try {
                 thread.sleep(10);
             } catch (InterruptedException e) {
