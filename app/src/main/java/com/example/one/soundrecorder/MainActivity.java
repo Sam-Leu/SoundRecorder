@@ -25,7 +25,6 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-
 public class MainActivity extends AppCompatActivity implements Runnable {
     private Boolean recording = false;  //用于判断是否正在录音
     private MediaRecorder mediaRecorder = null;
