@@ -280,6 +280,7 @@ public class RecordActivity extends AppCompatActivity implements RecordAdapter.O
                     }
                     Toast.makeText(RecordActivity.this,"重命名成功",Toast.LENGTH_SHORT).show();
                     FileUtils.renameDialog(RecordActivity.this, filePath+"/"+strFileName+".amr", strFileName);
+
                     Log.d("4test", "rename");
                 }
             }

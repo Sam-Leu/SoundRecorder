@@ -97,7 +97,7 @@ public class MainActivity extends AppCompatActivity implements Runnable {
         public void run() {
             timeCount++;
             //刷新timeTextView视图显示计时
-            String timeString = showTimeCount(timeCount);
+            String timeString = TimeStyleHelper.showTimeCount(timeCount);
             timeTextView.setText(timeString);
             //每1秒刷新一次
             handler.postDelayed(this, 1000);
@@ -126,24 +126,6 @@ public class MainActivity extends AppCompatActivity implements Runnable {
             recordTextView.setText("录音");
             recording = false;
             Log.i("n","暂停录音。");
-        }
-    }
-
-    //将秒数格式化成时分秒格式
-    public String showTimeCount(int time) {
-        int second = time % 60; //格式化的秒，而time是原始的秒
-        if (time < 60) {
-            return "00:00:" + (second < 10 ? "0" + String.valueOf(second) : String.valueOf(second));
-        } else {
-            int original_minute = time / 60;  //原始的分
-            int minute = original_minute % 60;  //格式化的分
-            if (original_minute < 60) {
-                return "00:" + (minute < 10 ? "0" + String.valueOf(minute) : String.valueOf(minute)) + ":" + (second < 10 ? "0" + String.valueOf(second) : String.valueOf(second));
-            } else {
-                int original_hour = time / 3600;    //原始的时，上升到天数是时才会用到
-                int hour = original_hour % 24;  //格式化的时
-                return (hour < 10 ? "0" + String.valueOf(hour) : String.valueOf(hour)) + ":" + (minute < 10 ? "0" + String.valueOf(minute) : String.valueOf(minute)) + ":" + (second < 10 ? "0" + String.valueOf(second) : String.valueOf(second));
-            }
         }
     }
 
@@ -179,11 +161,6 @@ public class MainActivity extends AppCompatActivity implements Runnable {
                 e.printStackTrace();
             }
         }else{
-//            try {
-//                mediaRecorder.prepare();
-//            } catch (IOException e) {
-//                e.printStackTrace();
-//            }
             Log.i("m","继续录音。");
             mediaRecorder.start();  //开始录制
         }
@@ -212,6 +189,16 @@ public class MainActivity extends AppCompatActivity implements Runnable {
             historyBtn.setEnabled(true);    //录音已经停止，可以查看历史录音信息了
             recording = false;
             Log.i("end","结束录音。");
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if(mediaRecorder != null){
+            mediaRecorder.stop();
+            mediaRecorder.release();
+            handler.removeCallbacks(runnable);
         }
     }
 

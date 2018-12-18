@@ -25,6 +25,9 @@ public class PlayActivity extends AppCompatActivity implements View.OnClickListe
     private String filePath;
     private TextView titleTextView;
     private TextView playTextView;
+    private TextView durationTextView;
+    private TextView processTextView;
+    private Button btn_play;
 
     private float duration;
 
@@ -35,12 +38,15 @@ public class PlayActivity extends AppCompatActivity implements View.OnClickListe
         public void run() {
             // 获得歌曲现在播放位置并设置成播放进度条的值
             if (mediaPlayer != null) {
-                Log.i("显示播放进度：",String.valueOf(mediaPlayer.getCurrentPosition()));
-                Log.i("显示总长度：",String.valueOf(duration));
-                Log.i("显示比例：",String.valueOf((int)(mediaPlayer.getCurrentPosition() / duration * 100)));
                 progressBar.setProgress((int)(mediaPlayer.getCurrentPosition() / duration * 100));
-                // 每100毫秒刷新一次
-                handler.postDelayed(changeProgressBarThread, 1);
+                //更新播放时间
+                processTextView.setText(TimeStyleHelper.showTimeCount(mediaPlayer.getCurrentPosition()/1000));
+                if(mediaPlayer.getCurrentPosition() >= duration){
+                    btn_play.setBackgroundResource(R.drawable.prepare);
+                    playTextView.setText("播放");
+                }
+                // 每10毫秒刷新一次
+                handler.postDelayed(changeProgressBarThread, 10);
             }
         }
     };
@@ -50,8 +56,11 @@ public class PlayActivity extends AppCompatActivity implements View.OnClickListe
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_play);
 
+        btn_play = findViewById(R.id.btn_play);
         titleTextView = findViewById(R.id.tv_fileName);
         playTextView = findViewById(R.id.tv_play);
+        processTextView = findViewById(R.id.processTextView);
+        durationTextView = findViewById(R.id.durationTextVIew);
 
         Intent intent = getIntent();
         String fileName = intent.getStringExtra("fileName");
@@ -82,6 +91,8 @@ public class PlayActivity extends AppCompatActivity implements View.OnClickListe
             mediaPlayer.prepare();  //让Mediaplayer进入到准备状态
 
             duration = mediaPlayer.getDuration();   //获取录音文件的长度，用于显示进度
+            durationTextView.setText(TimeStyleHelper.showTimeCount((int) duration / 1000));
+
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -91,7 +102,6 @@ public class PlayActivity extends AppCompatActivity implements View.OnClickListe
     public void onClick(View v) {
         switch (v.getId()){
             case R.id.btn_play:
-                Button btn_play = findViewById(R.id.btn_play);
                 if(!mediaPlayer.isPlaying()){
                     mediaPlayer.start();    //开始播放
                     Log.d("4test", "Start play");
